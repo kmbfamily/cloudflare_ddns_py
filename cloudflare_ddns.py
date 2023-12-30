@@ -26,35 +26,48 @@ cloudflare DDNS python script menual
 3. Return value is Bool, If the DDNS update is successful, it returns True, otherwise, it returns False
 """
 
+def get_my_ip():
+    try:
+        result = requests.get("http://kmbddns.dothome.co.kr/").json()["ip"]
+    except:
+        return False
+    return result
+
 def get_dns_record(zone_id, api_token, domain):         #서브 도메인별 ID 구하기
-    url = "https://api.cloudflare.com/client/v4/zones/"+zone_id+"/dns_records?type=A&name="+domain
-    headers = {
-        "Authorization": "Bearer "+api_token,
-        "Content-Type": "application/json"
-    }
-    response = requests.get(url, headers=headers)
-    dns_record_info = response.json()
-    if dns_record_info["success"] and dns_record_info["result_info"]["total_count"] == 1:
-        return dns_record_info["result"][0]["id"]
-    else:
+    try:
+        url = "https://api.cloudflare.com/client/v4/zones/"+zone_id+"/dns_records?type=A&name="+domain
+        headers = {
+            "Authorization": "Bearer "+api_token,
+            "Content-Type": "application/json"
+        }
+        response = requests.get(url, headers=headers)
+        dns_record_info = response.json()
+        if dns_record_info["success"] and dns_record_info["result_info"]["total_count"] == 1:
+            return dns_record_info["result"][0]["id"]
+        else:
+            return False
+    except:
         return False
     return
 
 def update_dns_record(zone_id, api_token, domain, ip, ttl, proxied):
-    url = "https://api.cloudflare.com/client/v4/zones/"+zone_id+"/dns_records/"+get_dns_record(zone_id, api_token, domain)
-    headers = {
-        "Authorization": "Bearer "+api_token,
-        "Content-Type": "application/json"
-    }
-    data = {
-        "type": "A",
-        "name": domain,
-        "content": ip,
-        "ttl": ttl,
-        "proxied": proxied
-    }
-    response = requests.put(url, headers=headers, data=json.dumps(data))
-    update_dns_record = response.json()
+    try:
+        url = "https://api.cloudflare.com/client/v4/zones/"+zone_id+"/dns_records/"+get_dns_record(zone_id, api_token, domain)
+        headers = {
+            "Authorization": "Bearer "+api_token,
+            "Content-Type": "application/json"
+        }
+        data = {
+            "type": "A",
+            "name": domain,
+            "content": ip,
+            "ttl": ttl,
+            "proxied": proxied
+        }
+        response = requests.put(url, headers=headers, data=json.dumps(data))
+        update_dns_record = response.json()
+    except:
+        return False
     return update_dns_record["success"]
 
-update_dns_record("UyDwgAEEVqLxsBhFYaSVjrqr","EgZjaHJvbWUyDwgAEEVqLxsBhFYaSVjrqrySb5y14UM","test.kmbfamily.com","121.1.1.1",60,False)
+update_dns_record("","","ddns1.kmbfamily.com",get_my_ip(),60,False)
